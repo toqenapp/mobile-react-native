@@ -1,0 +1,140 @@
+name: Release iOS
+
+on:
+  push:
+    tags:
+      - "v-ios-*"
+
+concurrency:
+  group: release-ios-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-submit-ios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    permissions:
+      contents: read
+      actions: read
+
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_PROJECT_ID: ${{ secrets.EXPO_PROJECT_ID }}
+      ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Verify Expo auth
+        run: eas whoami
+
+      - name: Sync app metadata to EAS production environment
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SHORT_COMMIT="${GITHUB_SHA::7}"
+          TAG_NAME="${GITHUB_REF_NAME}"
+          WORKFLOW_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          COMMIT_URL="https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}"
+
+          eas env:create --environment production --name APP_GIT_COMMIT_HASH --value "${SHORT_COMMIT}" --visibility plaintext --non-interactive || \
+          eas env:update --environment production --variable-name APP_GIT_COMMIT_HASH --value "${SHORT_COMMIT}" --non-interactive
+
+          eas env:create --environment production --name APP_GIT_TAG --value "${TAG_NAME}" --visibility plaintext --non-interactive || \
+          eas env:update --environment production --variable-name APP_GIT_TAG --value "${TAG_NAME}" --non-interactive
+
+          eas env:create --environment production --name APP_WORKFLOW_URL --value "${WORKFLOW_URL}" --visibility plaintext --non-interactive || \
+          eas env:update --environment production --variable-name APP_WORKFLOW_URL --value "${WORKFLOW_URL}" --non-interactive
+
+          eas env:create --environment production --name APP_COMMIT_URL --value "${COMMIT_URL}" --visibility plaintext --non-interactive || \
+          eas env:update --environment production --variable-name APP_COMMIT_URL --value "${COMMIT_URL}" --non-interactive
+
+      - name: Build iOS
+        id: build_ios
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BUILD_OUTPUT=$(eas build \
+            --platform ios \
+            --profile production \
+            --non-interactive \
+            --wait \
+            --json)
+
+          BUILD_ID=$(printf '%s' "$BUILD_OUTPUT" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const raw=JSON.parse(d);const build=Array.isArray(raw)?raw[0]:raw;if(!build||!build.id){console.error('Build ID not found in EAS output');process.exit(1)}process.stdout.write(build.id)})")
+
+          echo "build_id=${BUILD_ID}" >> "$GITHUB_OUTPUT"
+          echo "BUILD_ID=${BUILD_ID}" >> "$GITHUB_ENV"
+          echo "Build ID: ${BUILD_ID}"
+
+      - name: Backup eas.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp eas.json eas.json.backup
+
+      - name: Create temporary eas.json for submit
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat > eas.json <<EOF
+          {
+            "cli": {
+              "version": ">= 18.4.0",
+              "appVersionSource": "remote",
+              "requireCommit": true
+            },
+            "submit": {
+              "production": {
+                "ios": {
+                  "ascAppId": "${ASC_APP_ID}"
+                }
+              }
+            }
+          }
+          EOF
+
+      - name: Submit iOS to App Store Connect
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          eas submit \
+            --platform ios \
+            --profile production \
+            --non-interactive \
+            --id "$BUILD_ID"
+
+      - name: Restore eas.json
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mv eas.json.backup eas.json

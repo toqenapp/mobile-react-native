@@ -1,0 +1,102 @@
+name: Release Android
+
+on:
+  push:
+    tags:
+      - "v-android-*"
+
+concurrency:
+  group: release-android-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-submit-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    permissions:
+      contents: read
+      actions: read
+
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_PROJECT_ID: ${{ secrets.EXPO_PROJECT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Verify Expo auth
+        run: eas whoami
+
+      - name: Sync app metadata to EAS production environment
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SHORT_COMMIT="${GITHUB_SHA::7}"
+          TAG_NAME="${GITHUB_REF_NAME}"
+          WORKFLOW_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          COMMIT_URL="https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}"
+
+          eas env:create --environment production --name APP_GIT_COMMIT_HASH --value "${SHORT_COMMIT}" --visibility plaintext --non-interactive || \
+          eas env:update --environment production --variable-name APP_GIT_COMMIT_HASH --value "${SHORT_COMMIT}" --non-interactive
+
+          eas env:create --environment production --name APP_GIT_TAG --value "${TAG_NAME}" --visibility plaintext --non-interactive || \
+          eas env:update --environment production --variable-name APP_GIT_TAG --value "${TAG_NAME}" --non-interactive
+
+          eas env:create --environment production --name APP_WORKFLOW_URL --value "${WORKFLOW_URL}" --visibility plaintext --non-interactive || \
+          eas env:update --environment production --variable-name APP_WORKFLOW_URL --value "${WORKFLOW_URL}" --non-interactive
+
+          eas env:create --environment production --name APP_COMMIT_URL --value "${COMMIT_URL}" --visibility plaintext --non-interactive || \
+          eas env:update --environment production --variable-name APP_COMMIT_URL --value "${COMMIT_URL}" --non-interactive
+
+      - name: Build Android
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BUILD_OUTPUT=$(eas build \
+            --platform android \
+            --profile production \
+            --non-interactive \
+            --wait \
+            --json)
+
+          BUILD_ID=$(printf '%s' "$BUILD_OUTPUT" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const raw=JSON.parse(d);const build=Array.isArray(raw)?raw[0]:raw;if(!build||!build.id){console.error('Build ID not found in EAS output');process.exit(1)}process.stdout.write(build.id)})")
+
+          echo "BUILD_ID=${BUILD_ID}" >> "$GITHUB_ENV"
+          echo "Build ID: ${BUILD_ID}"
+
+      - name: Submit Android to Google Play
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          eas submit \
+            --platform android \
+            --profile production \
+            --non-interactive \
+            --id "$BUILD_ID"
