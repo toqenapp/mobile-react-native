@@ -243,14 +243,16 @@ function ConfirmScreenInner({ session }: Props) {
           </AppText>
         </Card>
 
-        <AppText className=" mt-8 text-center text-xl text-slate-400">
-          You are signing in to this service
-          <br />
+        <AppText className="mt-8 text-center text-slate-400 ">
+          You are signing in to this service is granted
+        </AppText>
+
+        <AppText className="text-center mt-1.5 text-slate-400">
           Your device will cryptographically verify this request before access
           is granted
         </AppText>
 
-        <AppText className="mt-4 mb-auto text-lg text-slate-400">
+        <AppText className="mt-6 mb-auto text-lg text-slate-400">
           Expires in{" "}
           <AppText className="text-3xl font-bold tracking-widest text-slate-100">
             {timeLeft}
