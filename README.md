@@ -1,40 +1,44 @@
 # Toqen.app Mobile
 
-Access-first authentication mobile app for secure QR-based authorization.
+Access-first authentication infrastructure for secure, real-time authorization using QR flows and device-bound cryptographic keys.
 
-## Security-first design:
+## Security principles
 
-- Device-bound cryptography
-- Challenge-response authorization
-- No reusable credentials or long-lived authentication tokens
-- Public threat model
+- Device-bound cryptographic authentication
+- Challenge-response verification for every access request
+- Short-lived, single-use authorization challenges
+- Secure local storage for sensitive data
+- Server-side verification of all authorization decisions
 
-## How authorization works:
+## Authorization flow
 
-- A short-lived request is created by the service
-- The request is delivered to the mobile app (QR or mobile flow)
-- The user explicitly approves or denies the request
-- The device signs a unique challenge
-- The server verifies the signature before granting access
+1. A short-lived authorization request is created by the service
+2. The request is delivered to the mobile app (QR or mobile flow)
+3. The user explicitly approves or denies the request
+4. The device signs a unique challenge using a secure key
+5. The backend verifies the signature before granting access
 
-## Why this repository is public
+## Repository purpose
 
-This repository is public to support transparency and independent technical review.
+This repository is publicly available to support transparency and independent technical review.
 
-It allows developers, security engineers, and partners to inspect the architecture, understand the authorization flow, and evaluate the security model in practice.
+It enables developers, security engineers, and partners to:
 
-All rights for usage, redistribution, modification, and production deployment are governed by the repository license.
+- inspect the architecture
+- understand the authorization flow
+- evaluate the security model in practice
 
-## What the mobile app does
+## Mobile application role
 
-The Toqen.app mobile app is designed for secure, real-time authorization flows, including:
+The Toqen.app mobile app participates in authorization flows by:
 
-- QR-based access confirmation
-- Device-bound cryptographic verification
-- Secure local secret storage
+- scanning and processing authorization requests
+- performing device-bound cryptographic operations
+- confirming user intent
+- securely storing device secrets
 
-All authorization decisions are verified by the backend.
-The mobile app never acts as a source of truth.
+All authorization decisions are enforced by the backend.
+The mobile application does not act as a source of truth.
 
 ## Documentation
 
@@ -57,5 +61,5 @@ Building continues.
 
 This repository is source-available.
 
-Viewing and reviewing the source code is allowed.
-Usage, redistribution, modification, and production reuse are restricted by the license in this repository.
+Access to the source code is provided for review and evaluation.
+Usage, redistribution, modification, and production deployment are governed by the license in this repository.

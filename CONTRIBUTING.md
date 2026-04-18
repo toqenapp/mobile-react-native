@@ -2,85 +2,83 @@
 
 Thank you for your interest in Toqen Mobile.
 
-This repository is publicly available for transparency and technical review.
+This repository is publicly available to support transparency and independent technical review.
 
-## Important
+## Project model
 
 This is a source-available project.
 
-- Viewing and inspecting the code is allowed
-- Usage, redistribution, and modification are restricted by the license
-- External contributions are currently not accepted
+- Access to the source code is provided for inspection and evaluation
+- Usage, redistribution, and modification are governed by the repository license
+- External code contributions are not accepted at this stage
 
-## Purpose of this repository
+## Repository purpose
 
 This repository exists to:
 
 - provide visibility into the mobile application architecture
-- allow security review and technical evaluation
+- enable security review and technical evaluation
 - support partners and integrators in understanding the system
 - document implementation details of access-first authentication
 
 ## Reporting issues
 
-If you find a bug, inconsistency, or technical concern, you can open an issue.
+If you identify a bug, inconsistency, or technical concern, you may open an issue.
 
 Please include:
 
 - clear description of the problem
 - steps to reproduce
-- expected vs actual behavior
-- environment details (if relevant)
+- expected and actual behavior
+- environment details when relevant
 
-## Security issues
+## Security reporting
 
-Do not report security vulnerabilities via public issues.
+Do not disclose security vulnerabilities via public issues.
 
-Instead, report them privately:
+Report them privately:
 
-Email: hi@toqen.app
+hi@toqen.app
 
-See SECURITY.md for more details.
+Refer to `SECURITY.md` for the full policy.
 
-## Code style and structure
+## Architecture overview
 
-The project follows a modular architecture:
+The project follows a modular structure:
 
-- screens — UI entry points
-- components — reusable UI elements
-- services — API communication layer
-- security — cryptographic and storage logic
-- store — application state
-- utils — helper functions
+- `screens` — application entry points
+- `components` — reusable UI elements
+- `services` — API communication layer
+- `security` — cryptographic operations and secure storage
+- `store` — application state management
+- `utils` — helper functions
 
-Key principles:
+## Engineering principles
 
 - minimal data exposure
-- device-bound logic
-- explicit flows
+- device-bound cryptographic operations
+- explicit and verifiable authorization flows
 - clear separation of concerns
 
-## Development notes
+## Development guidelines
 
-- All network requests go through the HTTP layer
-- API contracts are defined in docs/api-contracts.md
-- Sensitive data must never be logged or stored in plaintext
-- Secrets must be stored only in secure storage
+- all network requests go through the defined API layer
+- API contracts are documented in `docs/api-contracts.md`
+- sensitive data must not be logged or stored in plaintext
+- secrets must be stored only in secure storage
 
 ## Pull requests
 
 Pull requests are not accepted at this stage.
 
-This may change in the future as the project evolves.
+The contribution model may evolve as the project develops.
 
-## Roadmap
-
-The project is actively evolving.
+## Project status
 
 Building continues.
 
 ## Contact
 
-For collaboration, partnerships, or technical discussions:
+For technical discussions, partnerships, or collaboration:
 
 hi@toqen.app
