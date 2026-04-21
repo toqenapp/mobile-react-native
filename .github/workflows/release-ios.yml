@@ -16,12 +16,12 @@ jobs:
 
     permissions:
       contents: read
-      actions: read
 
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       EXPO_PROJECT_ID: ${{ secrets.EXPO_PROJECT_ID }}
       ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
     steps:
       - name: Checkout
@@ -37,8 +37,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: pnpm
+          node-version: 24
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -78,7 +77,12 @@ jobs:
           git config user.email "github-actions@github.com"
 
           git add src/build-meta.js
-          git commit -m "build(ci): inject build metadata"
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "build(ci): inject build metadata"
+          fi
 
       - name: Build iOS
         id: build_ios
@@ -131,6 +135,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
           eas submit \
             --platform ios \
             --profile production \
@@ -142,6 +147,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
           if [ -f eas.json.backup ]; then
             mv eas.json.backup eas.json
           fi
