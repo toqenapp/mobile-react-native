@@ -16,6 +16,6 @@
     "nativewind-env.d.ts",
     ".dev/**/*",
     "app.config.js",
-    "build-meta.js"
+    "src/build-meta.js"
   ]
 }
