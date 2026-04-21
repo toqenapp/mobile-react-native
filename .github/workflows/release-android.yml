@@ -58,7 +58,6 @@ jobs:
 
           mkdir -p src
           cat > src/build-meta.ts <<EOF
-
           export const buildMeta = {
             gitCommitHash: "${GITHUB_SHA::7}",
             gitTag: "${GITHUB_REF_NAME}",
@@ -68,6 +67,17 @@ jobs:
 
           echo "Generated src/build-meta.ts"
           cat src/build-meta.ts
+
+      - name: Commit generated build meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add src/build-meta.ts
+          git commit -m "build(ci): inject build metadata"
 
       - name: Build Android
         id: build_android
