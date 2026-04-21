@@ -52,5 +52,3 @@ modules/**/android/build/
 modules/**/ios/build/
 
 ios/build/
-
-build-meta.*
