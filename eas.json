@@ -5,16 +5,15 @@
     "requireCommit": true
   },
   "build": {
-    "development": {
-      "developmentClient": true,
+    "preview-android": {
       "distribution": "internal",
-      "environment": "development",
+      "environment": "production",
       "android": {
         "buildType": "apk"
       }
     },
     "ios-simulator": {
-      "extends": "development",
+      "distribution": "internal",
       "environment": "development",
       "ios": {
         "simulator": true
