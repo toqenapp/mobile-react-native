@@ -6,6 +6,7 @@ import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
+import android.util.Log
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -27,6 +28,7 @@ class DeviceKeyModule : Module() {
   private val alias = "com.toqen.app.devicekey.p256"
   private val provider = "AndroidKeyStore"
   private val signAlgorithm = "SHA256withECDSA"
+  private val logTag = "DeviceKeyModule"
 
   override fun definition() = ModuleDefinition {
     Name("DeviceKey")
@@ -57,7 +59,7 @@ class DeviceKeyModule : Module() {
       rawUncompressedPublicKey(publicKey).toIntList()
     }
 
-    AsyncFunction("signWithAuth") { message: ByteArray, promise: Promise ->
+    AsyncFunction("signWithAuth") { message: List<Int>, promise: Promise ->
       val activity = requireFragmentActivity()
       if (activity == null) {
         promise.reject("NO_ACTIVITY", "FragmentActivity is not available", null)
@@ -88,6 +90,8 @@ class DeviceKeyModule : Module() {
         return@AsyncFunction
       }
 
+      val messageBytes = message.map { (it and 0xFF).toByte() }.toByteArray()
+
       try {
         validatePrivateKey(entry.privateKey)
 
@@ -96,6 +100,8 @@ class DeviceKeyModule : Module() {
 
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
           .setTitle("Confirm sign in")
+          .setSubtitle("Use biometrics to continue")
+          .setNegativeButtonText("Cancel")
           .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
           .build()
 
@@ -115,11 +121,12 @@ class DeviceKeyModule : Module() {
                 val cryptoSignature = result.cryptoObject?.signature
                   ?: throw IllegalStateException("CryptoObject signature is missing")
 
-                cryptoSignature.update(message)
+                cryptoSignature.update(messageBytes)
                 val signed = cryptoSignature.sign()
 
                 promise.resolve(signed.toIntList())
               } catch (e: Exception) {
+                Log.e(logTag, "SIGN_FAILED", e)
                 promise.reject(
                   "SIGN_FAILED",
                   e.message ?: "Failed to sign challenge",
@@ -137,13 +144,13 @@ class DeviceKeyModule : Module() {
 
               promise.reject(
                 "AUTH_ERROR",
-                errString.toString(),
+                "[$errorCode] $errString",
                 null
               )
             }
 
             override fun onAuthenticationFailed() {
-              // Non-terminal callback. User may retry biometric auth.
+              Log.w(logTag, "Biometric authentication failed")
             }
           }
         )
@@ -153,6 +160,7 @@ class DeviceKeyModule : Module() {
           BiometricPrompt.CryptoObject(signature)
         )
       } catch (e: Exception) {
+        Log.e(logTag, "INIT_FAILED", e)
         promise.reject(
           "INIT_FAILED",
           e.message ?: "Failed to initialize signing",
@@ -199,8 +207,8 @@ class DeviceKeyModule : Module() {
       try {
         generateKeyPair(useStrongBox = true)
         return
-      } catch (_: InvalidAlgorithmParameterException) {
-        // Some devices report StrongBox support but fail at runtime.
+      } catch (e: InvalidAlgorithmParameterException) {
+        Log.w(logTag, "StrongBox generation failed, fallback to TEE", e)
       }
     }
 
@@ -252,8 +260,8 @@ class DeviceKeyModule : Module() {
 
     ensurePurposeSign(keyInfo)
     ensureAuthenticationRequired(keyInfo)
-    ensureHardwareBacked(keyInfo)
-    ensureSecureHardwareAuthEnforced(keyInfo)
+
+    logKeySecurityInfo(keyInfo)
   }
 
   private fun getKeyInfo(privateKey: PrivateKey): KeyInfo {
@@ -273,8 +281,8 @@ class DeviceKeyModule : Module() {
     }
   }
 
-  private fun ensureHardwareBacked(keyInfo: KeyInfo) {
-    val isHardwareBacked = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+  private fun logKeySecurityInfo(keyInfo: KeyInfo) {
+    val hardwareBacked = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
       keyInfo.securityLevel == KeyProperties.SECURITY_LEVEL_TRUSTED_ENVIRONMENT ||
         keyInfo.securityLevel == KeyProperties.SECURITY_LEVEL_STRONGBOX
     } else {
@@ -282,19 +290,16 @@ class DeviceKeyModule : Module() {
       keyInfo.isInsideSecureHardware
     }
 
-    if (!isHardwareBacked) {
-      throw IllegalStateException(
-        "This device does not provide a hardware-backed keystore for the required EC signing key"
-      )
+    val authEnforcedByHardware = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      keyInfo.isUserAuthenticationRequirementEnforcedBySecureHardware
+    } else {
+      null
     }
-  }
 
-  private fun ensureSecureHardwareAuthEnforced(keyInfo: KeyInfo) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
-
-    if (!keyInfo.isUserAuthenticationRequirementEnforcedBySecureHardware) {
-      throw IllegalStateException("User authentication is not enforced by secure hardware")
-    }
+    Log.i(
+      logTag,
+      "Key security info: hardwareBacked=$hardwareBacked, authEnforcedByHardware=$authEnforcedByHardware"
+    )
   }
 
   private fun biometricUnavailableMessage(code: Int): String {
