@@ -16,7 +16,6 @@ import { useCallback } from "react";
 const APP_VERSION = Constants.expoConfig?.version;
 
 const EXTRA = Constants.expoConfig?.extra;
-const APP_BUILD = EXTRA?.build;
 const GIT_COMMIT_HASH = EXTRA?.gitCommitHash;
 const GIT_TAG = EXTRA?.gitTag;
 const BUILD_URL = EXTRA?.workflowUrl;
@@ -303,13 +302,6 @@ export default function SettingsScreen() {
                 nameIcon="cube-outline"
                 title="Version"
                 value={APP_VERSION}
-              />
-
-              <SettingsRow
-                familyIcon="ionicons"
-                nameIcon="build-outline"
-                title="Build"
-                value={APP_BUILD}
               />
 
               <SettingsRow

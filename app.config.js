@@ -1,38 +1,5 @@
 const pkg = require("./package.json");
-
-function getRequiredEnv(name, fallback) {
-  let raw;
-
-  switch (name) {
-    case "APP_GIT_COMMIT_HASH":
-      raw = process.env.APP_GIT_COMMIT_HASH;
-      break;
-    case "APP_GIT_TAG":
-      raw = process.env.APP_GIT_TAG;
-      break;
-    case "APP_WORKFLOW_URL":
-      raw = process.env.APP_WORKFLOW_URL;
-      break;
-    case "APP_COMMIT_URL":
-      raw = process.env.APP_COMMIT_URL;
-      break;
-    default:
-      raw = undefined;
-  }
-
-  const value =
-    typeof raw === "string" && raw.trim()
-      ? raw.trim()
-      : typeof fallback === "string" && fallback.trim()
-        ? fallback.trim()
-        : "";
-
-  if (!value) {
-    throw new Error(`${name} is missing`);
-  }
-
-  return value;
-}
+const { buildMeta } = require("./src/build-meta");
 
 module.exports = ({ config }) => {
   const projectId =
@@ -44,15 +11,11 @@ module.exports = ({ config }) => {
     throw new Error("Project ID is missing");
   }
 
-  const build =
-    process.env.EAS_BUILD_ANDROID_VERSION_CODE ||
-    process.env.EAS_BUILD_IOS_BUILD_NUMBER ||
-    "0";
-
-  const gitCommitHash = getRequiredEnv("APP_GIT_COMMIT_HASH", "local");
-  const gitTag = getRequiredEnv("APP_GIT_TAG", "dev");
-  const workflowUrl = getRequiredEnv("APP_WORKFLOW_URL", "https://github.com");
-  const commitUrl = getRequiredEnv("APP_COMMIT_URL", "https://github.com");
+  const workflowUrl =
+    buildMeta?.workflowUrl ||
+    "https://github.com/toqenapp/mobile-react-native/actions";
+  const gitCommitHash = buildMeta?.gitCommitHash || "local";
+  const gitTag = buildMeta?.gitTag || "dev";
 
   return {
     ...config,
@@ -137,12 +100,9 @@ module.exports = ({ config }) => {
       router: {},
       eas: { projectId },
 
-      build,
       gitCommitHash,
       gitTag,
       workflowUrl,
-      commitUrl,
-
       baseUrl: "https://www.toqen.app",
     },
   };

@@ -52,15 +52,23 @@ jobs:
       - name: Verify Expo auth
         run: eas whoami
 
-      - name: Prepare app metadata
+      - name: Generate build metadata file
         shell: bash
         run: |
           set -euo pipefail
 
-          echo "APP_GIT_COMMIT_HASH=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
-          echo "APP_GIT_TAG=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
-          echo "APP_WORKFLOW_URL=https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" >> "$GITHUB_ENV"
-          echo "APP_COMMIT_URL=https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" >> "$GITHUB_ENV"
+          mkdir -p src
+          cat > src/build-meta.ts <<EOF
+
+          export const buildMeta = {
+            gitCommitHash: "${GITHUB_SHA::7}",
+            gitTag: "${GITHUB_REF_NAME}",
+            workflowUrl: "https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}",
+          } as const;
+          EOF
+
+          echo "Generated src/build-meta.ts"
+          cat src/build-meta.ts
 
       - name: Build iOS
         id: build_ios
@@ -113,7 +121,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           eas submit \
             --platform ios \
             --profile production \
@@ -125,4 +132,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mv eas.json.backup eas.json
+          if [ -f eas.json.backup ]; then
+            mv eas.json.backup eas.json
+          fi

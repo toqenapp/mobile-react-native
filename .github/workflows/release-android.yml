@@ -51,17 +51,26 @@ jobs:
       - name: Verify Expo auth
         run: eas whoami
 
-      - name: Prepare app metadata
+      - name: Generate build metadata file
         shell: bash
         run: |
           set -euo pipefail
 
-          echo "APP_GIT_COMMIT_HASH=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
-          echo "APP_GIT_TAG=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
-          echo "APP_WORKFLOW_URL=https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" >> "$GITHUB_ENV"
-          echo "APP_COMMIT_URL=https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" >> "$GITHUB_ENV"
+          mkdir -p src
+          cat > src/build-meta.ts <<EOF
+
+          export const buildMeta = {
+            gitCommitHash: "${GITHUB_SHA::7}",
+            gitTag: "${GITHUB_REF_NAME}",
+            workflowUrl: "https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}",
+          } as const;
+          EOF
+
+          echo "Generated src/build-meta.ts"
+          cat src/build-meta.ts
 
       - name: Build Android
+        id: build_android
         shell: bash
         run: |
           set -euo pipefail
@@ -75,6 +84,7 @@ jobs:
 
           BUILD_ID=$(printf '%s' "$BUILD_OUTPUT" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const raw=JSON.parse(d);const build=Array.isArray(raw)?raw[0]:raw;if(!build||!build.id){console.error('Build ID not found in EAS output');process.exit(1)}process.stdout.write(build.id)})")
 
+          echo "build_id=${BUILD_ID}" >> "$GITHUB_OUTPUT"
           echo "BUILD_ID=${BUILD_ID}" >> "$GITHUB_ENV"
           echo "Build ID: ${BUILD_ID}"
 
@@ -82,7 +92,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           eas submit \
             --platform android \
             --profile production \
