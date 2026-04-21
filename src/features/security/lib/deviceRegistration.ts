@@ -2,6 +2,7 @@ import { api } from "@/src/api";
 import { deviceKey } from "@/src/providers/device-key";
 import * as SecureStore from "expo-secure-store";
 
+import { sleep } from "@/src/shared/lib/sleep";
 import {
   DEVICE_ID_KEY,
   DEVICE_REGISTERED_AT_MS_KEY,
@@ -52,24 +53,23 @@ function hasPartialRegistrationState(state: RegistrationState): boolean {
 
 let ensurePromise: Promise<void> | null = null;
 
-export async function deviceRegistration() {
-  if (ensurePromise) return ensurePromise;
+export async function deviceRegistration(): Promise<void> {
+  if (ensurePromise) {
+    return ensurePromise;
+  }
 
   ensurePromise = (async () => {
     await deviceKey.migrateDeviceKeyIfNeeded();
-    await deviceKey.fixPair();
 
     const initialState = await getRegistrationState();
 
-    if (hasPartialRegistrationState(initialState)) {
-      console.warn("DEVICE_REGISTRATION_PARTIAL_STATE_RESET", {
-        hasRegisteredFlag: initialState.isRegistered === "1",
-        hasDeviceId: Boolean(initialState.deviceId),
-        hasPublicKey: Boolean(initialState.publicKey),
-        hasAppInstanceId: Boolean(initialState.appInstanceId),
-      });
+    if (isFullyRegistered(initialState)) {
+      return;
+    }
 
+    if (hasPartialRegistrationState(initialState)) {
       await deviceKey.resetPair();
+      await sleep(10);
     }
 
     const stateAfterCleanup = await getRegistrationState();
@@ -78,11 +78,24 @@ export async function deviceRegistration() {
       return;
     }
 
+    await deviceKey.fixPair();
+    await sleep(10);
+
+    const stateAfterFixPair = await getRegistrationState();
+
+    if (isFullyRegistered(stateAfterFixPair)) {
+      return;
+    }
+
     const initResult = await api.register.init();
     const registrationId = initResult.registration_id;
 
     const publicKey = await deviceKey.createPair();
+    await sleep(10);
+
     const signature = await deviceKey.signPairWithAuth(initResult.challenge);
+    await sleep(10);
+
     const appInstanceId = await deviceKey.getOrCreateAppInstanceId();
 
     let completeResult: Awaited<ReturnType<typeof api.register.complete>>;
@@ -95,18 +108,20 @@ export async function deviceRegistration() {
         appInstanceId,
       });
     } catch (error) {
-      console.error("DEVICE_REGISTRATION_COMPLETE_FAILED_RESET", error);
       await deviceKey.resetPair();
+      await sleep(10);
       throw error;
     }
 
     if (completeResult.registration_id !== registrationId) {
       await deviceKey.resetPair();
+      await sleep(10);
       throw new Error("DEVICE_REGISTRATION_ID_MISMATCH");
     }
 
     if (completeResult.device_public_key !== publicKey) {
       await deviceKey.resetPair();
+      await sleep(10);
       throw new Error("DEVICE_REGISTRATION_PUBLIC_KEY_MISMATCH");
     }
 
@@ -118,9 +133,15 @@ export async function deviceRegistration() {
       );
       await SecureStore.setItemAsync(DEVICE_REGISTERED_KEY, "1");
     } catch (error) {
-      console.error("DEVICE_REGISTRATION_LOCAL_SAVE_FAILED_RESET", error);
       await deviceKey.resetPair();
+      await sleep(10);
       throw error;
+    }
+
+    const finalState = await getRegistrationState();
+
+    if (!isFullyRegistered(finalState)) {
+      throw new Error("DEVICE_REGISTRATION_FINAL_STATE_INVALID");
     }
   })();
 

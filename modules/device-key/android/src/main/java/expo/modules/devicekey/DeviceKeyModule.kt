@@ -3,10 +3,10 @@ package expo.modules.devicekey
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
-import android.util.Log
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -92,80 +92,82 @@ class DeviceKeyModule : Module() {
 
       val messageBytes = message.map { (it and 0xFF).toByte() }.toByteArray()
 
-      try {
-        validatePrivateKey(entry.privateKey)
+      activity.runOnUiThread {
+        try {
+          validatePrivateKey(entry.privateKey)
 
-        val signature = Signature.getInstance(signAlgorithm)
-        signature.initSign(entry.privateKey)
+          val signature = Signature.getInstance(signAlgorithm)
+          signature.initSign(entry.privateKey)
 
-        val promptInfo = BiometricPrompt.PromptInfo.Builder()
-          .setTitle("Confirm sign in")
-          .setSubtitle("Use biometrics to continue")
-          .setNegativeButtonText("Cancel")
-          .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
-          .build()
+          val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Confirm sign in")
+            .setSubtitle("Use biometrics to continue")
+            .setNegativeButtonText("Cancel")
+            .build()
 
-        var settled = false
+          var settled = false
 
-        val biometricPrompt = BiometricPrompt(
-          activity,
-          ContextCompat.getMainExecutor(activity),
-          object : BiometricPrompt.AuthenticationCallback() {
-            override fun onAuthenticationSucceeded(
-              result: BiometricPrompt.AuthenticationResult
-            ) {
-              if (settled) return
-              settled = true
+          val biometricPrompt = BiometricPrompt(
+            activity,
+            ContextCompat.getMainExecutor(activity),
+            object : BiometricPrompt.AuthenticationCallback() {
+              override fun onAuthenticationSucceeded(
+                result: BiometricPrompt.AuthenticationResult
+              ) {
+                if (settled) return
+                settled = true
 
-              try {
-                val cryptoSignature = result.cryptoObject?.signature
-                  ?: throw IllegalStateException("CryptoObject signature is missing")
+                try {
+                  Thread.sleep(50)
 
-                cryptoSignature.update(messageBytes)
-                val signed = cryptoSignature.sign()
+                  signature.update(messageBytes)
+                  val signed = signature.sign()
 
-                promise.resolve(signed.toIntList())
-              } catch (e: Exception) {
-                Log.e(logTag, "SIGN_FAILED", e)
+                  promise.resolve(signed.toIntList())
+                } catch (e: Exception) {
+                  Log.e(logTag, "SIGN_FAILED", e)
+                  promise.reject(
+                    "SIGN_FAILED",
+                    e.message ?: "Failed to sign challenge",
+                    e
+                  )
+                }
+              }
+
+              override fun onAuthenticationError(
+                errorCode: Int,
+                errString: CharSequence
+              ) {
+                if (settled) return
+                settled = true
+
+                Log.w(logTag, "AUTH_ERROR [$errorCode] $errString")
                 promise.reject(
-                  "SIGN_FAILED",
-                  e.message ?: "Failed to sign challenge",
-                  e
+                  "AUTH_ERROR",
+                  "[$errorCode] $errString",
+                  null
                 )
               }
+
+              override fun onAuthenticationFailed() {
+                Log.w(logTag, "Biometric authentication failed")
+              }
             }
+          )
 
-            override fun onAuthenticationError(
-              errorCode: Int,
-              errString: CharSequence
-            ) {
-              if (settled) return
-              settled = true
-
-              promise.reject(
-                "AUTH_ERROR",
-                "[$errorCode] $errString",
-                null
-              )
-            }
-
-            override fun onAuthenticationFailed() {
-              Log.w(logTag, "Biometric authentication failed")
-            }
-          }
-        )
-
-        biometricPrompt.authenticate(
-          promptInfo,
-          BiometricPrompt.CryptoObject(signature)
-        )
-      } catch (e: Exception) {
-        Log.e(logTag, "INIT_FAILED", e)
-        promise.reject(
-          "INIT_FAILED",
-          e.message ?: "Failed to initialize signing",
-          e
-        )
+          Log.i(logTag, "Launching biometric prompt")
+          biometricPrompt.authenticate(
+            promptInfo,
+            BiometricPrompt.CryptoObject(signature)
+          )
+        } catch (e: Exception) {
+          Log.e(logTag, "INIT_FAILED", e)
+          promise.reject(
+            "INIT_FAILED",
+            e.message ?: "Failed to initialize signing",
+            e
+          )
+        }
       }
     }
 
@@ -208,7 +210,7 @@ class DeviceKeyModule : Module() {
         generateKeyPair(useStrongBox = true)
         return
       } catch (e: InvalidAlgorithmParameterException) {
-        Log.w(logTag, "StrongBox generation failed, fallback to TEE", e)
+        Log.w(logTag, "StrongBox generation failed, falling back to TEE", e)
       }
     }
 
@@ -260,7 +262,6 @@ class DeviceKeyModule : Module() {
 
     ensurePurposeSign(keyInfo)
     ensureAuthenticationRequired(keyInfo)
-
     logKeySecurityInfo(keyInfo)
   }
 

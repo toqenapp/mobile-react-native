@@ -45,34 +45,6 @@ export default function ArchiveScreen() {
     return () => clearInterval(interval);
   }, [syncPassStatuses]);
 
-  // useEffect(() => {
-  // setTimeout(async () => {
-  //   await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  //   await sleep(130);
-  //   await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-  // }, 2000);
-  // setTimeout(
-  //   () => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
-  //   2000,
-  // );
-  // setTimeout(
-  //   () => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium),
-  //   4000,
-  // );
-  // setTimeout(
-  //   () => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy),
-  //   6000,
-  // );
-  // setTimeout(
-  //   () => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft),
-  //   8000,
-  // );
-  // setTimeout(
-  //   () => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid),
-  //   10000,
-  // );
-  // }, [query]);
-
   return (
     <Screen>
       <ScrollView

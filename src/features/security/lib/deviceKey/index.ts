@@ -17,7 +17,9 @@ import {
 
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = "";
-  for (const b of bytes) binary += String.fromCharCode(b);
+  for (const b of bytes) {
+    binary += String.fromCharCode(b);
+  }
   return b64encode(binary);
 }
 
@@ -44,6 +46,7 @@ async function getOrCreateAppInstanceId(): Promise<string> {
 
   const id = randomUUID();
   await SecureStore.setItemAsync(INSTANCE_KEY_NAME, id);
+
   return id;
 }
 
@@ -54,8 +57,8 @@ async function getPublicKey(): Promise<string | null> {
 async function resetDeviceIdentity(): Promise<void> {
   try {
     await DeviceKey.deleteKeyPair();
-  } catch (error) {
-    console.error("DEVICE_KEY_DELETE_FAILED", error);
+  } catch {
+    // ignore delete failure and continue clearing local state
   }
 
   await Promise.allSettled([
@@ -79,15 +82,14 @@ async function createPair(): Promise<string> {
     await SecureStore.deleteItemAsync(LEGACY_SEED_KEY_NAME);
 
     return publicKey;
-  } catch (error) {
-    console.error("CREATE_PAIR_FAILED_RESET", error);
-
+  } catch {
     await resetDeviceIdentity();
 
     const publicKeyBytes = await DeviceKey.generateKeyPair();
     const publicKey = toBase64Url(new Uint8Array(publicKeyBytes));
 
     await SecureStore.setItemAsync(PUBLIC_KEY_NAME, publicKey);
+    await SecureStore.deleteItemAsync(LEGACY_SEED_KEY_NAME);
 
     return publicKey;
   }
@@ -110,13 +112,12 @@ async function resetPair(): Promise<void> {
 
 async function fixPair(): Promise<void> {
   if (alreadyChecked) return;
+
   alreadyChecked = true;
 
   try {
     await createPair();
-  } catch (error) {
-    console.error("DEVICE_KEY_GENERATE_FAILED", error);
-
+  } catch {
     await resetDeviceIdentity();
 
     Alert.alert(
@@ -131,15 +132,11 @@ async function fixPair(): Promise<void> {
 async function migrateDeviceKeyIfNeeded(): Promise<void> {
   const current = await SecureStore.getItemAsync(DEVICE_KEY_VERSION_KEY);
 
-  if (current === DEVICE_KEY_VERSION) return;
-
-  console.warn("DEVICE_KEY_MIGRATION_RESET", {
-    from: current,
-    to: DEVICE_KEY_VERSION,
-  });
+  if (current === DEVICE_KEY_VERSION) {
+    return;
+  }
 
   await resetDeviceIdentity();
-
   await SecureStore.setItemAsync(DEVICE_KEY_VERSION_KEY, DEVICE_KEY_VERSION);
 }
 
