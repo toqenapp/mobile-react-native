@@ -51,27 +51,15 @@ jobs:
       - name: Verify Expo auth
         run: eas whoami
 
-      - name: Sync app metadata to EAS production environment
+      - name: Prepare app metadata
         shell: bash
         run: |
           set -euo pipefail
 
-          SHORT_COMMIT="${GITHUB_SHA::7}"
-          TAG_NAME="${GITHUB_REF_NAME}"
-          WORKFLOW_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          COMMIT_URL="https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}"
-
-          eas env:create --environment production --name APP_GIT_COMMIT_HASH --value "${SHORT_COMMIT}" --visibility plaintext --non-interactive || \
-          eas env:update --environment production --variable-name APP_GIT_COMMIT_HASH --value "${SHORT_COMMIT}" --non-interactive
-
-          eas env:create --environment production --name APP_GIT_TAG --value "${TAG_NAME}" --visibility plaintext --non-interactive || \
-          eas env:update --environment production --variable-name APP_GIT_TAG --value "${TAG_NAME}" --non-interactive
-
-          eas env:create --environment production --name APP_WORKFLOW_URL --value "${WORKFLOW_URL}" --visibility plaintext --non-interactive || \
-          eas env:update --environment production --variable-name APP_WORKFLOW_URL --value "${WORKFLOW_URL}" --non-interactive
-
-          eas env:create --environment production --name APP_COMMIT_URL --value "${COMMIT_URL}" --visibility plaintext --non-interactive || \
-          eas env:update --environment production --variable-name APP_COMMIT_URL --value "${COMMIT_URL}" --non-interactive
+          echo "APP_GIT_COMMIT_HASH=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+          echo "APP_GIT_TAG=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+          echo "APP_WORKFLOW_URL=https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" >> "$GITHUB_ENV"
+          echo "APP_COMMIT_URL=https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" >> "$GITHUB_ENV"
 
       - name: Build Android
         shell: bash

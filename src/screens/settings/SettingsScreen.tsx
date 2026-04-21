@@ -221,14 +221,14 @@ export default function SettingsScreen() {
                   familyIcon="ionicons"
                   nameIcon="shield-outline"
                   title="Security model"
-                  link="https://toqen.app/security"
+                  link="https://toqen.app/legal-app/security-and-data-handling"
                 />
 
                 <SettingsLinkIconRow
                   familyIcon="feather"
                   nameIcon="message-circle"
                   title="Report issue"
-                  link="https://toqen.app/security#report"
+                  link="https://toqen.app/legal-app/security-and-data-handling#report"
                 />
               </View>
 
