@@ -91,6 +91,7 @@ module.exports = ({ config }) => {
       ],
       "expo-secure-store",
       "expo-sqlite",
+      "expo-web-browser",
     ],
 
     experiments: {
