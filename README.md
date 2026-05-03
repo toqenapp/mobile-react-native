@@ -1,65 +1,111 @@
 # Toqen.app Mobile
 
-Access-first authentication infrastructure for secure, real-time authorization using QR flows and device-bound cryptographic keys.
+Access-first authentication infrastructure designed for secure, real-time authorization.
 
-## Security principles
+This repository contains the public Toqen.app mobile client source. The mobile client is the user-facing approval and signing surface for Toqen.app authorization flows. It scans or receives request context, shows that context to the user, collects an explicit approve or deny decision, and signs approval challenges with a device-bound key.
 
-- Device-bound cryptographic authentication
-- Challenge-response verification for every access request
-- Short-lived, single-use authorization challenges
-- Secure local storage for sensitive data
-- Server-side verification of all authorization decisions
+Platform-wide protocol, trust, privacy, and partner API documentation is maintained outside this mobile repository.
 
-## Authorization flow
+## Repository Scope
 
-1. A short-lived authorization request is created by the service
-2. The request is delivered to the mobile app (QR or mobile flow)
-3. The user explicitly approves or denies the request
-4. The device signs a unique challenge using a secure key
-5. The backend verifies the signature before granting access
+This repository owns mobile-client-specific documentation and code:
 
-## Repository purpose
+- React Native / Expo mobile app
+- native device-key module
+- mobile setup and run instructions
+- mobile architecture notes
+- mobile security and storage notes
+- mobile build and release notes
+- mobile-facing client contract notes
 
-This repository is publicly available to support transparency and independent technical review.
+The docs in this repository stay focused on mobile behavior that reviewers can inspect in this codebase.
 
-It enables developers, security engineers, and partners to:
+## Mobile Role
 
-- inspect the architecture
-- understand the authorization flow
-- evaluate the security model in practice
+The mobile app is responsible for:
 
-## Mobile application role
+- scanning Toqen.app QR payloads
+- accepting manual-code and mobile handoff flows
+- resolving request context from Toqen.app services
+- presenting request context to the user
+- collecting approve or deny decisions
+- invoking local authentication for sensitive actions
+- signing approval challenges with a device-bound key
+- storing limited local state for presentation and repair
 
-The Toqen.app mobile app participates in authorization flows by:
+Toqen.app server-side services verify requests and decide final authorization outcomes.
 
-- scanning and processing authorization requests
-- performing device-bound cryptographic operations
-- confirming user intent
-- securely storing device secrets
+## Security Summary
 
-All authorization decisions are enforced by the backend.
-The mobile application does not act as a source of truth.
+The mobile client is designed around:
+
+- explicit user approval
+- device-bound cryptographic authorization
+- local authentication, including biometrics or device credentials where supported and enabled
+- secure key storage through the native device-key module
+- rejection of malformed QR payloads
+- signed server response verification where required by the client
+- local cache treated as presentation state, not authorization authority
+- responsible vulnerability disclosure
+
+This reduces risk but does not eliminate it. A compromised device, compromised operating system, user misapproval, or implementation defect can still create risk.
 
 ## Documentation
 
-- [System overview](./docs/overview.md)
-- [Architecture](./docs/architecture.md)
-- [Authorization flows](./docs/flows.md)
-- [QR request format](./docs/qr-format.md)
-- [Security model](./docs/security-model.md)
+Mobile-specific docs:
+
+- [Mobile overview](./docs/overview.md)
+- [Mobile architecture](./docs/architecture.md)
+- [Mobile client](./docs/mobile-client.md)
+- [Mobile flows](./docs/flows.md)
+- [Mobile QR handling](./docs/qr-format.md)
+- [Mobile-facing API notes](./docs/api-contracts.md)
+- [Mobile security model](./docs/security-model.md)
+- [Mobile threat model](./docs/threat-model.md)
 - [Secure storage](./docs/storage.md)
-- [API contracts](./docs/api-contracts.md)
-- [Threat model](./docs/threat-model.md)
 - [Build and release](./docs/build-and-release.md)
-- [Security policy](./SECURITY.md)
+- [Mobile build traceability](./docs/build-traceability.md)
 
-## Repository status
+Platform-wide docs live outside this mobile repository.
 
-Building continues.
+## Development
+
+Install dependencies:
+
+```sh
+pnpm install
+```
+
+Run the app locally:
+
+```sh
+pnpm start
+```
+
+Run linting:
+
+```sh
+pnpm lint
+```
+
+Real production values and secrets must not be committed.
+
+## Security Reporting
+
+Do not open public issues for vulnerabilities.
+
+Report security issues privately:
+
+```text
+hi@toqen.app
+```
+
+## Contribution Model
+
+This repository is public for transparency and review. External pull requests are not accepted by default unless maintainers explicitly request them.
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 
-This repository is source-available.
-
-Access to the source code is provided for review and evaluation.
-Usage, redistribution, modification, and production deployment are governed by the license in this repository.
+This repository is source-available. Usage, redistribution, modification, and production deployment are governed by the license in this repository.

@@ -212,7 +212,7 @@ export default function SettingsScreen() {
                 <SettingsLinkIconRow
                   familyIcon="materialCommunityIcons"
                   nameIcon="open-source-initiative"
-                  title="Open source"
+                  title="Public source"
                   link="https://github.com/toqenapp/mobile-react-native"
                 />
 
@@ -236,7 +236,7 @@ export default function SettingsScreen() {
                 device-based cryptographic verification
               </AppText>
 
-              <SettingsListRow text="Open source mobile client" />
+              <SettingsListRow text="Public mobile client source" />
               <SettingsListRow text="Public security model" />
               <SettingsListRow text="Access-first authentication architecture" />
               <SettingsListRow text="Device-bound cryptographic authorization" />
@@ -318,6 +318,11 @@ export default function SettingsScreen() {
                 value={GIT_COMMIT_HASH}
               />
             </View>
+          </View>
+          <View className="px-4 py-6">
+            <AppText className="text-xxs uppercase tracking-[1px] text-zinc-500">
+              2025-present Toqen.app
+            </AppText>
           </View>
         </ScrollView>
       </TabFadeScaleIn>

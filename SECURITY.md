@@ -1,37 +1,48 @@
 # Security Policy
 
-## Reporting a vulnerability
+This file covers the Toqen.app mobile client repository.
 
-If you believe you have found a security vulnerability in Toqen Mobile, please report it privately.
+Toqen.app follows responsible vulnerability disclosure for mobile client security reports.
 
-Contact:
+## Reporting A Vulnerability
 
-- hi@toqen.app
+Report mobile client security concerns privately:
 
-Please include:
+```text
+hi@toqen.app
+```
 
-- a clear description of the issue
-- affected component or screen
-- reproduction steps
-- impact assessment
-- logs, screenshots, or proof of concept if available
+Do not open public issues for vulnerabilities.
 
-## Disclosure policy
+## Mobile Scope
 
-Please do not publicly disclose security issues before we have had a reasonable opportunity to investigate and address them.
+In scope for this repository:
 
-We prefer coordinated disclosure.
+- QR and manual-code parsing in the mobile client
+- mobile approval and denial handling
+- device-bound signing behavior exposed by the mobile client
+- local authentication behavior
+- secure storage and local cache behavior
+- signed server response verification in the mobile client
+- mobile build and release integrity
+- mobile documentation that could mislead users or integrators
 
-## Scope
+Please report privately if a concern involves:
 
-This repository includes the mobile client code and related documentation.
+- backend validation behavior
+- private provider routes
+- database schemas
+- edge abuse-control implementation
+- deployment topology
+- production secrets or environment values
 
-Issues that may be relevant include:
+## Disclosure Expectations
 
-- authentication bypass
-- QR flow abuse
-- replay opportunities
-- insecure local storage
-- cryptographic misuse
-- sensitive data exposure
-- build or release integrity issues
+Please coordinate disclosure with maintainers. Do not publish exploit instructions, private implementation details, or sensitive screenshots while a report is under review.
+
+## Mobile Security Docs
+
+- [Mobile security model](./docs/security-model.md)
+- [Mobile threat model](./docs/threat-model.md)
+- [Secure storage](./docs/storage.md)
+- [Build and release](./docs/build-and-release.md)

@@ -1,268 +1,46 @@
-# Architecture
+# Mobile Architecture
 
-This document describes the architecture of the Toqen Mobile application.
+This document describes the Toqen.app mobile client architecture.
 
-The system is built around an access-first model, where authorization is performed through real-time, device-bound verification instead of persistent credentials.
+## Layers
 
----
+### App Routes And Screens
 
-## High-Level Overview
+Expo Router routes and screen components provide the mobile user flows:
 
-The mobile application is responsible for:
+- home and service views
+- scan and manual-code entry
+- confirmation
+- settings
+- archive and local access views
 
-- receiving access requests (QR or manual)
-- validating and presenting request context
-- signing authorization challenges using a device key
-- confirming or rejecting access
+### API Client Layer
 
-The app does not act as a source of truth.
-All authorization decisions are verified by the server.
+The mobile API layer wraps mobile-facing HTTP calls, response schema validation, timeouts, and signed response verification where required by the client.
 
----
+These mobile-facing contracts are not SDK-stable partner APIs.
 
-## Core Principles
+### Security Layer
 
-- Access-first authorization
-- Device-bound identity
-- Minimal data exposure
-- Short-lived authorization context
-- Explicit user confirmation
-- Cryptographic verification
+The security layer handles:
 
----
+- device registration
+- device public key access
+- approval signing
+- local authentication
+- signed server response verification
+- device identity reset and repair
 
-## System Components
+### Native Device-Key Module
 
-### 1. Screens
+The native module creates or accesses device-bound keys and signs challenges after local authentication. Private key material is intended to remain protected by platform key storage controls.
 
-User-facing entry points of the application.
+### Local State
 
-Examples:
+Zustand stores and local persistence support presentation state, including access-pass and service cache. Local state is not authorization authority.
 
-- Home screen
-- QR Scan screen
-- Confirm Access screen
-- Settings screen
+## Mobile Trust Boundary
 
-Responsibilities:
+The app is trusted to display context and request a user decision. It is not trusted to make final policy decisions.
 
-- display request context
-- collect user decision (approve / deny)
-- trigger flows
-
----
-
-### 2. Components
-
-Reusable UI building blocks.
-
-Examples:
-
-- QR scanner
-- access card
-- confirmation buttons
-- loaders and status indicators
-
-Responsibilities:
-
-- encapsulate UI logic
-- ensure consistent rendering
-
----
-
-### 3. Services (API Layer)
-
-Handles all communication with the backend.
-
-Defined in:
-
-- api/\*
-- http.ts
-
-Responsibilities:
-
-- send requests to backend
-- map payloads and responses
-- handle errors and timeouts
-
-All network calls go through a single HTTP abstraction.
-
----
-
-### 4. Security Layer
-
-Handles all sensitive operations.
-
-Responsibilities:
-
-- device key generation
-- challenge signing
-- secure storage access
-- cryptographic operations
-
-Key properties:
-
-- private key never leaves the device
-- all signatures are generated locally
-- no secrets are transmitted in plaintext
-
----
-
-### 5. Storage Layer
-
-Responsible for local data persistence.
-
-Data stored:
-
-- device_private_key
-- device_id
-
-Requirements:
-
-- use secure storage (e.g. OS-provided secure storage)
-- never store secrets in plaintext
-- never log sensitive data
-
----
-
-### 6. State Management
-
-Responsible for application state.
-
-Responsibilities:
-
-- current auth session
-- services list
-- device state
-- UI state
-
-State must remain predictable and isolated from side effects.
-
----
-
-### 7. Navigation Layer
-
-Controls application flow between screens.
-
-Responsibilities:
-
-- transition between states (scan → confirm → result)
-- handle deep links (QR / auth links)
-- manage flow lifecycle
-
----
-
-## Authorization Flow (QR)
-
-1. User scans QR code
-2. App extracts request data (requestId, nonce, etc.)
-3. App sends `/auth/qr/scanned`
-4. Server returns challenge and context
-5. App displays service, location, and request info
-6. User approves or denies
-7. App signs challenge using device private key
-8. App sends `/auth/qr/confirm`
-9. Server verifies signature
-10. Access is granted or denied
-
----
-
-## Authorization Flow (Mobile Start)
-
-1. App initiates `/mobile/auth/start`
-2. Server returns challenge and request context
-3. App displays request info
-4. User approves or denies
-5. App signs challenge
-6. App sends `/mobile/auth/confirm`
-7. Server verifies signature
-8. App receives launch instruction (web/app)
-
----
-
-## Trust Boundaries
-
-### Device
-
-Trusted for:
-
-- private key storage
-- signature generation
-
-Not trusted for:
-
-- final authorization decision
-
----
-
-### Backend
-
-Trusted for:
-
-- verifying signatures
-- issuing challenges
-- granting access
-
-Not trusted for:
-
-- storing private keys
-- accessing raw secrets
-
----
-
-### Network
-
-Assumed to be untrusted.
-
-Protections:
-
-- short-lived challenges
-- signature verification
-- no reusable tokens
-
----
-
-## Data Flow
-
-- QR → mobile app → backend → response → user decision → signed request → backend verification
-
-No sensitive data is transmitted without cryptographic protection.
-
----
-
-## Security Considerations
-
-- QR codes do not contain secrets
-- challenges are short-lived
-- requests are single-use
-- signatures bind request to device
-- replay attacks are mitigated by nonce and expiration
-- private keys are never transmitted
-
----
-
-## Failure Scenarios
-
-Handled cases include:
-
-- expired request
-- invalid signature
-- network timeout
-- user denial
-- device mismatch
-
-The app must always handle failure gracefully and avoid undefined states.
-
----
-
-## Summary
-
-The Toqen Mobile application is designed as a secure execution environment for authorization decisions.
-
-It ensures that:
-
-- the user explicitly confirms access
-- the device cryptographically proves intent
-- the server validates every action
-
-Building continues.
+Server-side Toqen.app services remain the authority for verification and access outcomes.

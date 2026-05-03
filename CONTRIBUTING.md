@@ -1,84 +1,55 @@
 # Contributing
 
-Thank you for your interest in Toqen Mobile.
+Thank you for your interest in the Toqen.app mobile client.
 
-This repository is publicly available to support transparency and independent technical review.
+This repository is public to support transparency, review, and mobile-client-specific technical evaluation. It is source-available, and use of the source is governed by the repository license.
 
-## Project model
+## Contribution Model
 
-This is a source-available project.
+External pull requests are not accepted by default at this stage unless maintainers explicitly request them.
 
-- Access to the source code is provided for inspection and evaluation
-- Usage, redistribution, and modification are governed by the repository license
-- External code contributions are not accepted at this stage
+Useful contributions include:
 
-## Repository purpose
+- mobile bug reports
+- mobile documentation corrections
+- mobile build or release observations
+- private security reports
+- questions that identify unclear mobile-client behavior
 
-This repository exists to:
+## Repository Boundary
 
-- provide visibility into the mobile application architecture
-- enable security review and technical evaluation
-- support partners and integrators in understanding the system
-- document implementation details of access-first authentication
+This repository should document only the mobile client.
 
-## Reporting issues
+Platform-wide architecture, public protocol, SDK, backend, provider, edge, database, privacy, and organization-level security docs are maintained outside this mobile repository.
 
-If you identify a bug, inconsistency, or technical concern, you may open an issue.
+## Security Issues
 
-Please include:
+Do not report vulnerabilities publicly.
 
-- clear description of the problem
-- steps to reproduce
-- expected and actual behavior
-- environment details when relevant
+Email:
 
-## Security reporting
-
-Do not disclose security vulnerabilities via public issues.
-
-Report them privately:
-
+```text
 hi@toqen.app
+```
 
-Refer to `SECURITY.md` for the full policy.
+## Development
 
-## Architecture overview
+Install dependencies:
 
-The project follows a modular structure:
+```sh
+pnpm install
+```
 
-- `screens` — application entry points
-- `components` — reusable UI elements
-- `services` — API communication layer
-- `security` — cryptographic operations and secure storage
-- `store` — application state management
-- `utils` — helper functions
+Run locally:
 
-## Engineering principles
+```sh
+pnpm start
+```
 
-- minimal data exposure
-- device-bound cryptographic operations
-- explicit and verifiable authorization flows
-- clear separation of concerns
+Run linting:
 
-## Development guidelines
+```sh
+pnpm lint
+```
 
-- all network requests go through the defined API layer
-- API contracts are documented in `docs/api-contracts.md`
-- sensitive data must not be logged or stored in plaintext
-- secrets must be stored only in secure storage
-
-## Pull requests
-
-Pull requests are not accepted at this stage.
-
-The contribution model may evolve as the project develops.
-
-## Project status
-
-Building continues.
-
-## Contact
-
-For technical discussions, partnerships, or collaboration:
-
-hi@toqen.app
+Real secrets and production environment values must not be committed.

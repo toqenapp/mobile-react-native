@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private security report
+    url: mailto:hi@toqen.app
+    about: Please report security vulnerabilities privately by email. Do not open public issues for vulnerabilities.
