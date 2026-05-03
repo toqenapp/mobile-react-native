@@ -34,6 +34,8 @@ module.exports = ({ config }) => {
       supportsTablet: true,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
+        NSFaceIDUsageDescription:
+          "Toqen.app uses Face ID to protect your cryptographic device key and confirm authentication requests. Your biometric data is never stored or transmitted.",
       },
     },
 

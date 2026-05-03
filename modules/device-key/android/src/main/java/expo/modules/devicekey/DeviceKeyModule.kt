@@ -3,7 +3,6 @@ package expo.modules.devicekey
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import android.util.Log
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
@@ -28,7 +27,6 @@ class DeviceKeyModule : Module() {
   private val alias = "com.toqen.app.devicekey.p256"
   private val provider = "AndroidKeyStore"
   private val signAlgorithm = "SHA256withECDSA"
-  private val logTag = "DeviceKeyModule"
 
   override fun definition() = ModuleDefinition {
     Name("DeviceKey")
@@ -125,7 +123,6 @@ class DeviceKeyModule : Module() {
 
                   promise.resolve(signed.toIntList())
                 } catch (e: Exception) {
-                  Log.e(logTag, "SIGN_FAILED", e)
                   promise.reject(
                     "SIGN_FAILED",
                     e.message ?: "Failed to sign challenge",
@@ -141,27 +138,20 @@ class DeviceKeyModule : Module() {
                 if (settled) return
                 settled = true
 
-                Log.w(logTag, "AUTH_ERROR [$errorCode] $errString")
                 promise.reject(
                   "AUTH_ERROR",
                   "[$errorCode] $errString",
                   null
                 )
               }
-
-              override fun onAuthenticationFailed() {
-                Log.w(logTag, "Biometric authentication failed")
-              }
             }
           )
 
-          Log.i(logTag, "Launching biometric prompt")
           biometricPrompt.authenticate(
             promptInfo,
             BiometricPrompt.CryptoObject(signature)
           )
         } catch (e: Exception) {
-          Log.e(logTag, "INIT_FAILED", e)
           promise.reject(
             "INIT_FAILED",
             e.message ?: "Failed to initialize signing",
@@ -210,7 +200,7 @@ class DeviceKeyModule : Module() {
         generateKeyPair(useStrongBox = true)
         return
       } catch (e: InvalidAlgorithmParameterException) {
-        Log.w(logTag, "StrongBox generation failed, falling back to TEE", e)
+        // StrongBox unavailable on this device; fall back to TEE
       }
     }
 
@@ -262,7 +252,6 @@ class DeviceKeyModule : Module() {
 
     ensurePurposeSign(keyInfo)
     ensureAuthenticationRequired(keyInfo)
-    logKeySecurityInfo(keyInfo)
   }
 
   private fun getKeyInfo(privateKey: PrivateKey): KeyInfo {
@@ -280,27 +269,6 @@ class DeviceKeyModule : Module() {
     if (!keyInfo.isUserAuthenticationRequired) {
       throw IllegalStateException("Key must require user authentication")
     }
-  }
-
-  private fun logKeySecurityInfo(keyInfo: KeyInfo) {
-    val hardwareBacked = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-      keyInfo.securityLevel == KeyProperties.SECURITY_LEVEL_TRUSTED_ENVIRONMENT ||
-        keyInfo.securityLevel == KeyProperties.SECURITY_LEVEL_STRONGBOX
-    } else {
-      @Suppress("DEPRECATION")
-      keyInfo.isInsideSecureHardware
-    }
-
-    val authEnforcedByHardware = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-      keyInfo.isUserAuthenticationRequirementEnforcedBySecureHardware
-    } else {
-      null
-    }
-
-    Log.i(
-      logTag,
-      "Key security info: hardwareBacked=$hardwareBacked, authEnforcedByHardware=$authEnforcedByHardware"
-    )
   }
 
   private fun biometricUnavailableMessage(code: Int): String {

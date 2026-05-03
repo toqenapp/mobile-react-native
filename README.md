@@ -41,7 +41,7 @@ The mobile client is designed around:
 
 - explicit user approval
 - device-bound cryptographic authorization
-- local authentication, including biometrics or device credentials where supported and enabled
+- strong biometric authentication (Face ID or Touch ID on iOS, fingerprint on Android) where supported and enrolled
 - secure key storage through the native device-key module
 - rejection of malformed QR payloads
 - signed server response verification where required by the client

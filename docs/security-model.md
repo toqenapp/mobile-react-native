@@ -9,7 +9,7 @@ The mobile client should:
 - reject malformed public QR payloads
 - show request context before approval
 - require explicit user action
-- use local authentication, including biometrics or device credentials where supported and enabled
+- require strong biometric authentication where supported and enrolled
 - sign approval challenges through the native device-key module
 - verify signed server responses where required by the client
 - treat local cache as presentation state
@@ -22,9 +22,9 @@ Platform protection depends on operating system and hardware support.
 
 ## Local Authentication
 
-Sensitive approval signing requires local authentication, including biometrics or device credentials where supported and enabled by the current implementation.
+Sensitive approval signing requires strong biometric authentication (Face ID or Touch ID on iOS, fingerprint on Android) where supported and enrolled. PIN or passcode fallback is explicitly disabled; if strong biometrics are unavailable the app blocks access rather than falling back to a weaker credential.
 
-If local authentication fails or is unavailable for a required action, the app should not silently approve access.
+If local authentication fails or is unavailable for a required action, the app does not silently approve access.
 
 ## Server-Side Authority
 

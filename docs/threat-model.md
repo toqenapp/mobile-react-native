@@ -30,7 +30,7 @@ Mitigation: show clear service and request context before approval. This risk ca
 
 A compromised device may weaken key protection or allow unauthorized user actions.
 
-Mitigation: use secure key storage and local authentication, including biometrics or device credentials where supported and enabled. Residual risk remains.
+Mitigation: use secure key storage and strong biometric authentication where supported and enrolled. PIN or passcode fallback is disabled. Residual risk remains on fully compromised devices, but hardware key storage (Secure Enclave on iOS, TEE or StrongBox on Android) enforces biometric requirements independently of the OS.
 
 ### Local Cache Tampering
 

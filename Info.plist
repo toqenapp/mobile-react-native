@@ -1,2 +1,4 @@
 <key>NSCameraUsageDescription</key>
 <string>Camera is used to scan QR codes for secure authentication</string>
+<key>NSFaceIDUsageDescription</key>
+<string>Toqen.app uses Face ID to protect your cryptographic device key and confirm authentication requests. Your biometric data is never stored or transmitted.</string>
