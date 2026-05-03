@@ -1,4 +1,7 @@
-import { authenticateLocal } from "@/src/features/security/lib/localAuth";
+import {
+  authenticateLocal,
+  canUseLocalAuth,
+} from "@/src/features/security/lib/localAuth";
 import { LockedType, useSecurityStore } from "@/src/store/securityStore";
 import { useCallback, useState } from "react";
 
@@ -19,7 +22,13 @@ export function useUnlock() {
           setLockedType();
           setLastUnlockAt(Date.now());
         } else {
-          setLockedType(LockedType.LogoAndUnlockBtn);
+          const canStillUse = await canUseLocalAuth();
+          if (canStillUse) {
+            setLockedType(LockedType.LogoAndUnlockBtn);
+          } else {
+            setLockedType(LockedType.BiometricDenied);
+            setLastUnlockAt(null);
+          }
         }
       } catch {
         setLockedType(LockedType.LogoAndUnlockBtn);
