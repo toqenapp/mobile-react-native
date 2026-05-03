@@ -5,6 +5,7 @@ export enum LockedType {
   TransparentAndLoader = "TransparentAndLoader",
   Logo = "Logo",
   LogoAndUnlockBtn = "LogoAndUnlockBtn",
+  BiometricDenied = "BiometricDenied",
 }
 
 type SecuritySettings = {
@@ -16,15 +17,18 @@ type SecurityState = {
   isLockedType?: LockedType;
   lastUnlockAt: number | null;
   settings: SecuritySettings;
+  pendingBiometricModal: boolean;
 
   setLockedType: (value?: LockedType) => void;
   setLastUnlockAt: (value: number | null) => void;
   patchSettings: (patch: Partial<SecuritySettings>) => void;
+  setPendingBiometricModal: (value: boolean) => void;
 };
 
 export const useSecurityStore = create<SecurityState>((set) => ({
   isLockedType: LockedType.Logo,
   lastUnlockAt: null,
+  pendingBiometricModal: false,
 
   settings: {
     lockOnLaunch: true,
@@ -40,4 +44,5 @@ export const useSecurityStore = create<SecurityState>((set) => ({
         ...patch,
       },
     })),
+  setPendingBiometricModal: (value) => set({ pendingBiometricModal: value }),
 }));
