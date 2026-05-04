@@ -1,7 +1,7 @@
 {
   "name": "toqen-app",
   "main": "index.js",
-  "version": "1.0.47",
+  "version": "1.0.48",
   "scripts": {
     "start": "expo start",
     "start:clear": "expo start -c",
