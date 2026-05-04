@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 
 import { LockedType, useSecurityStore } from "@/src/store/securityStore";
+import { registrationBiometricActive } from "../lib/deviceRegistration";
 import { canUseLocalAuth } from "../lib/localAuth";
 import { useUnlock } from "./useUnlock";
 
@@ -74,6 +75,8 @@ export function useAppLockBootstrap() {
       }
 
       if (prevState === "background" && nextState === "active") {
+        if (registrationBiometricActive) return;
+
         const canUse = await canUseLocalAuth();
 
         if (settings.lockOnResume) {

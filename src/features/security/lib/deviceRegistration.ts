@@ -53,6 +53,8 @@ function hasPartialRegistrationState(state: RegistrationState): boolean {
 
 let ensurePromise: Promise<void> | null = null;
 
+export let registrationBiometricActive = false;
+
 export async function deviceRegistration(): Promise<void> {
   if (ensurePromise) {
     return ensurePromise;
@@ -93,7 +95,12 @@ export async function deviceRegistration(): Promise<void> {
     const publicKey = await deviceKey.createPair();
     await sleep(10);
 
-    const signature = await deviceKey.signPairWithAuth(initResult.challenge);
+    registrationBiometricActive = true;
+    const signature = await deviceKey
+      .signPairWithAuth(initResult.challenge)
+      .finally(() => {
+        registrationBiometricActive = false;
+      });
     await sleep(10);
 
     const appInstanceId = await deviceKey.getOrCreateAppInstanceId();
